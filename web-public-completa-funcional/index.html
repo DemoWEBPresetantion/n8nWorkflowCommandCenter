@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>n8n Library</title>
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./library.seed.js"></script>
+    <script>
+      // Soporta abrir por doble-click (file://) y hosting estatico.
+      (function () {
+        if (!window.fetch || !window.__N8N_LIBRARY_SEED__) return;
+
+        var originalFetch = window.fetch.bind(window);
+        window.fetch = function (input, init) {
+          try {
+            var rawUrl = typeof input === 'string' ? input : input && input.url ? input.url : '';
+            if (rawUrl && /library\.seed\.json(\?.*)?$/.test(rawUrl)) {
+              return Promise.resolve(
+                new Response(JSON.stringify(window.__N8N_LIBRARY_SEED__), {
+                  status: 200,
+                  headers: { 'Content-Type': 'application/json' },
+                }),
+              );
+            }
+          } catch (_) {}
+          return originalFetch(input, init);
+        };
+      })();
+    </script>
+    <style>
+      .manual-update-btn {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9999;
+        border: 0;
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        background: #0f172a;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.28);
+        cursor: pointer;
+      }
+
+      .manual-update-btn:disabled {
+        opacity: 0.8;
+        cursor: wait;
+      }
+
+      .prompt-viewer-open-btn {
+        border: 1px solid #ccd7d9;
+        border-radius: 999px;
+        background: #fff;
+        color: #132228;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .prompt-viewer-open-btn:hover {
+        border-color: #16857a;
+      }
+
+      .field-help-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .field-help-title {
+        line-height: 1.2;
+      }
+
+      .field-help-trigger {
+        width: 18px;
+        height: 18px;
+        border: 1px solid #a8bab7;
+        border-radius: 999px;
+        background: #fff;
+        color: #173036;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .field-help-trigger:hover {
+        border-color: #16857a;
+        color: #0b5751;
+      }
+
+      .field-help-popover {
+        position: fixed;
+        z-index: 10030;
+        width: min(340px, calc(100vw - 24px));
+        border: 1px solid #ccd7d9;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 14px 34px rgba(18, 32, 36, 0.24);
+        padding: 10px 11px;
+      }
+
+      .field-help-popover strong {
+        display: block;
+        margin: 0 0 5px;
+        font-size: 12px;
+        color: #102a2f;
+      }
+
+      .field-help-popover p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.4;
+        color: #2b454b;
+        white-space: pre-wrap;
+      }
+
+      .site-guide-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10040;
+        background: rgba(9, 13, 17, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+      }
+
+      .site-guide-modal {
+        width: min(860px, 98vw);
+        max-height: 88vh;
+        border: 1px solid #ccd7d9;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 20px 48px rgba(18, 32, 36, 0.28);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .site-guide-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 11px 12px;
+        border-bottom: 1px solid #e4eceb;
+        background: #f8fbfb;
+      }
+
+      .site-guide-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #102a2f;
+      }
+
+      .site-guide-close {
+        border: 1px solid #ccd7d9;
+        border-radius: 9px;
+        background: #fff;
+        color: #132228;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .site-guide-body {
+        padding: 12px;
+        overflow: auto;
+        display: grid;
+        gap: 10px;
+      }
+
+      .site-guide-block {
+        border: 1px solid #e1e9e8;
+        border-radius: 10px;
+        background: #fcfefe;
+        padding: 10px;
+      }
+
+      .site-guide-block h4 {
+        margin: 0 0 6px;
+        font-size: 13px;
+        color: #123036;
+      }
+
+      .site-guide-block p {
+        margin: 0;
+        font-size: 13px;
+        color: #2c464b;
+        line-height: 1.4;
+      }
+
+      .search-box.search-box--externalized {
+        display: none !important;
+      }
+
+      .nodes-search-panel {
+        margin-bottom: 10px;
+        border: 1px solid rgba(20, 30, 34, 0.12);
+        border-radius: 14px;
+        background: #ffffffd9;
+        padding: 10px;
+      }
+
+      .results-grid > .nodes-search-panel {
+        grid-column: 1 / -1;
+      }
+
+      .nodes-search-panel label {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+      }
+
+      .nodes-search-panel-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #173036;
+      }
+
+      .nodes-search-panel input {
+        width: 100%;
+        border: 1px solid #ccd7d9;
+        border-radius: 11px;
+        background: #fff;
+        color: #132228;
+        padding: 8px 10px;
+      }
+
+      .nodes-search-panel input:focus {
+        outline: 2px solid rgba(22, 133, 122, 0.28);
+        outline-offset: 1px;
+      }
+
+      .resource-card.nodes-search-match {
+        outline: 2px solid rgba(22, 133, 122, 0.45);
+        outline-offset: 1px;
+      }
+
+      html.prompt-viewer-open,
+      body.prompt-viewer-open {
+        overflow: hidden;
+      }
+
+      html.body-scroll-lock,
+      body.body-scroll-lock {
+        overflow: hidden;
+      }
+
+      .detail-panel,
+      .modal-panel {
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .prompt-viewer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10020;
+        background: rgba(9, 13, 17, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        overscroll-behavior: contain;
+      }
+
+      .prompt-viewer-modal {
+        width: min(680px, 96vw);
+        max-height: 80vh;
+        border: 1px solid #ccd7d9;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 18px 44px rgba(18, 32, 36, 0.26);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        overscroll-behavior: contain;
+      }
+
+      .prompt-viewer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e6ecec;
+        background: #f8fbfb;
+      }
+
+      .prompt-viewer-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #132228;
+      }
+
+      .prompt-viewer-close-btn {
+        border: 1px solid #ccd7d9;
+        border-radius: 8px;
+        background: #fff;
+        color: #132228;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .prompt-viewer-editor {
+        margin: 0;
+        width: 100%;
+        min-height: 260px;
+        padding: 12px;
+        border: 0;
+        outline: 0;
+        resize: none;
+        overflow: auto;
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #173036;
+        background: #f7fbfa;
+        flex: 1;
+      }
+
+      @media (max-width: 780px) {
+        .prompt-viewer-modal {
+          width: 100%;
+          max-height: 86vh;
+        }
+      }
+    </style>
+    <script>
+      // Boton manual para refrescar y forzar carga de cambios.
+      (function () {
+        function buildRefreshUrl() {
+          var url = new URL(window.location.href);
+          url.searchParams.set('_refresh', String(Date.now()));
+          return url.toString();
+        }
+
+        function refreshNow() {
+          window.location.replace(buildRefreshUrl());
+        }
+
+        function addUpdateButton() {
+          if (!document.body || document.querySelector('.manual-update-btn')) return;
+
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'manual-update-btn';
+          button.textContent = 'Actualizar web';
+          button.setAttribute('aria-label', 'Actualizar la web');
+          button.addEventListener('click', function () {
+            button.disabled = true;
+            button.textContent = 'Actualizando...';
+
+            var jobs = [];
+
+            if (window.caches && typeof window.caches.keys === 'function') {
+              jobs.push(
+                window.caches
+                  .keys()
+                  .then(function (keys) {
+                    return Promise.all(
+                      keys.map(function (key) {
+                        return window.caches.delete(key);
+                      }),
+                    );
+                  })
+                  .catch(function () {
+                    return [];
+                  }),
+              );
+            }
+
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              jobs.push(
+                navigator.serviceWorker
+                  .getRegistrations()
+                  .then(function (registrations) {
+                    return Promise.all(
+                      registrations.map(function (registration) {
+                        return registration.update();
+                      }),
+                    );
+                  })
+                  .catch(function () {
+                    return [];
+                  }),
+              );
+            }
+
+            if (!jobs.length) {
+              refreshNow();
+              return;
+            }
+
+            Promise.allSettled(jobs).finally(refreshNow);
+          });
+
+          document.body.appendChild(button);
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', addUpdateButton);
+        } else {
+          addUpdateButton();
+        }
+      })();
+    </script>
+    <script>
+      // Agrega una vista completa del prompt en una ventana pequena.
+      (function () {
+        var overlay = null;
+        var promptWatcher = null;
+        var domWatcher = null;
+        var escapeHandler = null;
+
+        function getPromptInput() {
+          return document.getElementById('assistant-system-prompt-input');
+        }
+
+        function readPromptText() {
+          var promptInput = getPromptInput();
+          return promptInput && typeof promptInput.value === 'string' ? promptInput.value : '';
+        }
+
+        function writePromptText(nextText) {
+          var promptInput = getPromptInput();
+          if (!promptInput || typeof promptInput.value !== 'string') return;
+          if (promptInput.value === nextText) return;
+          promptInput.value = nextText;
+          promptInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function stopPromptWatcher() {
+          if (promptWatcher !== null) {
+            window.clearInterval(promptWatcher);
+            promptWatcher = null;
+          }
+        }
+
+        function stopEscapeHandler() {
+          if (escapeHandler === null) return;
+          document.removeEventListener('keydown', escapeHandler);
+          escapeHandler = null;
+        }
+
+        function lockPageScroll() {
+          document.documentElement.classList.add('prompt-viewer-open');
+          document.body.classList.add('prompt-viewer-open');
+        }
+
+        function unlockPageScroll() {
+          document.documentElement.classList.remove('prompt-viewer-open');
+          document.body.classList.remove('prompt-viewer-open');
+        }
+
+        function closePromptViewer() {
+          stopPromptWatcher();
+          stopEscapeHandler();
+          unlockPageScroll();
+          if (!overlay) return;
+          var node = overlay;
+          overlay = null;
+          node.remove();
+        }
+
+        function openPromptViewer() {
+          if (overlay) return;
+
+          overlay = document.createElement('div');
+          overlay.className = 'prompt-viewer-overlay';
+
+          var modal = document.createElement('section');
+          modal.className = 'prompt-viewer-modal';
+          modal.setAttribute('role', 'dialog');
+          modal.setAttribute('aria-label', 'Vista completa del prompt');
+
+          var header = document.createElement('header');
+          header.className = 'prompt-viewer-header';
+
+          var title = document.createElement('h4');
+          title.className = 'prompt-viewer-title';
+          title.textContent = 'Prompt completo';
+
+          var closeButton = document.createElement('button');
+          closeButton.type = 'button';
+          closeButton.className = 'prompt-viewer-close-btn';
+          closeButton.textContent = 'Cerrar';
+          closeButton.addEventListener('click', closePromptViewer);
+
+          var content = document.createElement('textarea');
+          content.className = 'prompt-viewer-editor';
+          content.setAttribute('aria-label', 'Editor del prompt completo');
+          content.placeholder = 'Prompt vacio';
+          content.addEventListener('input', function () {
+            writePromptText(content.value);
+          });
+
+          function refreshViewer() {
+            var text = readPromptText();
+            if (document.activeElement !== content && content.value !== text) {
+              content.value = text;
+            }
+          }
+
+          refreshViewer();
+          promptWatcher = window.setInterval(refreshViewer, 300);
+
+          header.appendChild(title);
+          header.appendChild(closeButton);
+          modal.appendChild(header);
+          modal.appendChild(content);
+          overlay.appendChild(modal);
+
+          overlay.addEventListener('click', function (event) {
+            if (event.target === overlay) closePromptViewer();
+          });
+
+          escapeHandler = function (event) {
+            if (event.key !== 'Escape') return;
+            closePromptViewer();
+          };
+          document.addEventListener('keydown', escapeHandler);
+
+          lockPageScroll();
+          document.body.appendChild(overlay);
+          content.focus();
+        }
+
+        function ensurePromptButton() {
+          var header = document.querySelector('.assistant-system-prompt-header');
+          if (!header) return;
+          if (header.querySelector('.prompt-viewer-open-btn')) return;
+
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'prompt-viewer-open-btn';
+          button.textContent = 'Ver prompt completo';
+          button.setAttribute('aria-label', 'Abrir vista completa del prompt');
+          button.addEventListener('click', openPromptViewer);
+          header.appendChild(button);
+        }
+
+        function startDomWatcher() {
+          if (domWatcher) return;
+          domWatcher = new MutationObserver(function () {
+            ensurePromptButton();
+          });
+          domWatcher.observe(document.body, { childList: true, subtree: true });
+        }
+
+        function initPromptViewer() {
+          ensurePromptButton();
+          startDomWatcher();
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initPromptViewer);
+        } else {
+          initPromptViewer();
+        }
+      })();
+    </script>
+    <script>
+      // Evita que "prompt propio" herede el mismo contenido del prompt del sistema.
+      (function () {
+        try {
+          var systemKey = 'n8n-library-ai-system-prompt';
+          var customKey = 'n8n-library-ai-custom-prompt';
+          var systemPrompt = sessionStorage.getItem(systemKey);
+          var customPrompt = sessionStorage.getItem(customKey);
+
+          if (!customPrompt) return;
+
+          var normalizedSystem = (systemPrompt || '').trim();
+          var normalizedCustom = customPrompt.trim();
+
+          if (normalizedCustom && normalizedCustom === normalizedSystem) {
+            sessionStorage.removeItem(customKey);
+          }
+        } catch (_) {}
+      })();
+    </script>
+    <script>
+      // Migra una vez el prompt del sistema para aplicar la version mas reciente.
+      (function () {
+        try {
+          var versionKey = 'n8n-library-ai-system-prompt-version';
+          var targetVersion = '2026-02-07-v2';
+          var currentVersion = sessionStorage.getItem(versionKey);
+
+          if (currentVersion === targetVersion) return;
+
+          sessionStorage.removeItem('n8n-library-ai-system-prompt');
+          sessionStorage.setItem(versionKey, targetVersion);
+        } catch (_) {}
+      })();
+    </script>
+    <script>
+      // Botones de ayuda (icono pequeno) para explicar cada titulo de ajustes.
+      (function () {
+        var popover = null;
+        var handlersReady = false;
+        var syncTimer = null;
+        var syncRuns = 0;
+        var MAX_SYNC_RUNS = 120;
+
+        var HELP_TEXTS = [
+          {
+            matcher: /^Proveedor IA/i,
+            title: 'Proveedor IA',
+            text: 'Selecciona el servicio de IA que respondera tu prompt y generara la propuesta de workflow.',
+          },
+          {
+            matcher: /^API Key/i,
+            title: 'API Key',
+            text: 'Clave del proveedor. Se usa para autenticar peticiones. Si el proveedor la requiere y esta vacia, no podra generar.',
+          },
+          {
+            matcher: /^Chat model/i,
+            title: 'Chat model',
+            text: 'Modelo exacto que genera la respuesta. Influye en calidad, velocidad y costo.',
+          },
+          {
+            matcher: /^API Base URL/i,
+            title: 'API Base URL',
+            text: 'Endpoint base para proveedores compatibles. Debe ser una URL valida de API.',
+          },
+          {
+            matcher: /^Idioma de salida/i,
+            title: 'Idioma de salida',
+            text: 'Define en que idioma se devuelve el resumen y la explicacion del workflow.',
+          },
+          {
+            matcher: /^Nivel de workflow/i,
+            title: 'Nivel de workflow',
+            text: 'Basico: flujo corto y claro.\nIntermedio: equilibrio entre simplicidad y control.\nAvanzado: sin limite maximo de nodos; se adapta a la complejidad real que pida el usuario.',
+          },
+        ];
+
+        function closePopover() {
+          if (!popover) return;
+          popover.remove();
+          popover = null;
+        }
+
+        function findHelpConfig(rawLabelText) {
+          var text = (rawLabelText || '').trim();
+          for (var i = 0; i < HELP_TEXTS.length; i += 1) {
+            if (HELP_TEXTS[i].matcher.test(text)) return HELP_TEXTS[i];
+          }
+          return null;
+        }
+
+        function getLabelTitleNode(label) {
+          if (!label) return null;
+          var existing = label.querySelector('.field-help-title');
+          if (existing) return existing;
+          var nodes = label.childNodes;
+          for (var i = 0; i < nodes.length; i += 1) {
+            var node = nodes[i];
+            if (node.nodeType === 3 && node.textContent && node.textContent.trim()) {
+              return node;
+            }
+          }
+          return null;
+        }
+
+        function placePopover(trigger) {
+          if (!popover || !trigger) return;
+          var rect = trigger.getBoundingClientRect();
+          var top = rect.bottom + 8;
+          var left = rect.left;
+          var maxLeft = window.innerWidth - popover.offsetWidth - 10;
+
+          if (left > maxLeft) left = Math.max(10, maxLeft);
+          if (top + popover.offsetHeight > window.innerHeight - 10) {
+            top = Math.max(10, rect.top - popover.offsetHeight - 8);
+          }
+
+          popover.style.top = String(top) + 'px';
+          popover.style.left = String(left) + 'px';
+        }
+
+        function openPopover(trigger, config) {
+          closePopover();
+          popover = document.createElement('div');
+          popover.className = 'field-help-popover';
+          popover.innerHTML =
+            '<strong>' +
+            config.title +
+            '</strong><p>' +
+            config.text
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;') +
+            '</p>';
+          document.body.appendChild(popover);
+          placePopover(trigger);
+        }
+
+        function enhanceLabel(label) {
+          if (!label || label.querySelector('.field-help-inline')) return;
+
+          var titleNode = getLabelTitleNode(label);
+          if (!titleNode) return;
+
+          var rawText = (titleNode.textContent || '').trim();
+          var config = findHelpConfig(rawText);
+          if (!config) return;
+
+          var inline = document.createElement('span');
+          inline.className = 'field-help-inline';
+
+          var text = document.createElement('span');
+          text.className = 'field-help-title';
+          text.textContent = rawText;
+
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'field-help-trigger';
+          button.textContent = '?';
+          button.setAttribute('aria-label', 'Ayuda: ' + config.title);
+          button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (popover) {
+              closePopover();
+              return;
+            }
+            openPopover(button, config);
+          });
+
+          inline.appendChild(text);
+          inline.appendChild(button);
+
+          if (titleNode.nodeType === 3) {
+            label.insertBefore(inline, titleNode);
+            label.removeChild(titleNode);
+            return;
+          }
+          if (titleNode.parentNode) {
+            titleNode.parentNode.insertBefore(inline, titleNode);
+            titleNode.parentNode.removeChild(titleNode);
+          }
+        }
+
+        function enhanceAll() {
+          var labels = document.querySelectorAll('.assistant-ai-settings label');
+          for (var i = 0; i < labels.length; i += 1) enhanceLabel(labels[i]);
+        }
+
+        function ensureGlobalHandlers() {
+          if (handlersReady) return;
+          document.addEventListener('click', function (event) {
+            if (!popover) return;
+            if (popover.contains(event.target)) return;
+            closePopover();
+          });
+          window.addEventListener('resize', closePopover);
+          window.addEventListener(
+            'scroll',
+            function () {
+              closePopover();
+            },
+            true,
+          );
+          handlersReady = true;
+        }
+
+        function startSyncLoop() {
+          if (syncTimer !== null) return;
+          syncTimer = window.setInterval(function () {
+            enhanceAll();
+            syncRuns += 1;
+            if (syncRuns >= MAX_SYNC_RUNS) {
+              window.clearInterval(syncTimer);
+              syncTimer = null;
+            }
+          }, 250);
+        }
+
+        function initFieldHelp() {
+          enhanceAll();
+          ensureGlobalHandlers();
+          startSyncLoop();
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initFieldHelp);
+        } else {
+          initFieldHelp();
+        }
+      })();
+    </script>
+    <script>
+      // Titulo avanzado + boton para abrir una guia completa de la web.
+      (function () {
+        var overlay = null;
+        var escapeHandler = null;
+        var syncTimer = null;
+        var syncRuns = 0;
+        var MAX_SYNC_RUNS = 80;
+
+        var GUIDE_ITEMS = [
+          {
+            title: '1) Gestion de biblioteca',
+            text: 'Crea, importa, exporta o restaura recursos desde los botones principales de la cabecera.',
+          },
+          {
+            title: '2) Asistente IA',
+            text: 'Configura proveedor, modelo y nivel. Escribe un prompt y genera recomendacion + JSON de workflow.',
+          },
+          {
+            title: '3) Busqueda de nodos',
+            text: 'Usa "Buscar en nodos" para localizar nodos por nombre exacto o parcial dentro del apartado de resultados.',
+          },
+          {
+            title: '4) Filtros laterales',
+            text: 'Ajusta tipo, categoria, nivel, integraciones y tags para acotar recursos rapidamente.',
+          },
+          {
+            title: '5) Vista y acciones',
+            text: 'Abre cualquier recurso para ver detalle, copiar contenido, editarlo, eliminarlo o marcar favorito.',
+          },
+          {
+            title: '6) Workflows JSON',
+            text: 'Importa JSON de n8n, copialo o descargalo para mover flujos entre esta web y tu instancia de n8n.',
+          },
+        ];
+
+        function lockScroll() {
+          document.documentElement.classList.add('prompt-viewer-open');
+          document.body.classList.add('prompt-viewer-open');
+        }
+
+        function unlockScroll() {
+          document.documentElement.classList.remove('prompt-viewer-open');
+          document.body.classList.remove('prompt-viewer-open');
+        }
+
+        function closeGuide() {
+          if (escapeHandler) {
+            document.removeEventListener('keydown', escapeHandler);
+            escapeHandler = null;
+          }
+          unlockScroll();
+          if (!overlay) return;
+          overlay.remove();
+          overlay = null;
+        }
+
+        function openGuide() {
+          if (overlay) return;
+
+          overlay = document.createElement('div');
+          overlay.className = 'site-guide-overlay';
+
+          var modal = document.createElement('section');
+          modal.className = 'site-guide-modal';
+          modal.setAttribute('role', 'dialog');
+          modal.setAttribute('aria-label', 'Guia completa de la web');
+
+          var header = document.createElement('header');
+          header.className = 'site-guide-header';
+
+          var title = document.createElement('h3');
+          title.className = 'site-guide-title';
+          title.textContent = 'Guia completa de la web';
+
+          var closeBtn = document.createElement('button');
+          closeBtn.type = 'button';
+          closeBtn.className = 'site-guide-close';
+          closeBtn.textContent = 'Cerrar';
+          closeBtn.addEventListener('click', closeGuide);
+
+          var body = document.createElement('div');
+          body.className = 'site-guide-body';
+
+          for (var i = 0; i < GUIDE_ITEMS.length; i += 1) {
+            var item = GUIDE_ITEMS[i];
+            var block = document.createElement('article');
+            block.className = 'site-guide-block';
+            block.innerHTML =
+              '<h4>' +
+              item.title +
+              '</h4><p>' +
+              item.text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;') +
+              '</p>';
+            body.appendChild(block);
+          }
+
+          header.appendChild(title);
+          header.appendChild(closeBtn);
+          modal.appendChild(header);
+          modal.appendChild(body);
+          overlay.appendChild(modal);
+
+          overlay.addEventListener('click', function (event) {
+            if (event.target === overlay) closeGuide();
+          });
+
+          escapeHandler = function (event) {
+            if (event.key === 'Escape') closeGuide();
+          };
+          document.addEventListener('keydown', escapeHandler);
+
+          lockScroll();
+          document.body.appendChild(overlay);
+        }
+
+        function ensureAdvancedTitle() {
+          var h1 = document.querySelector('.title-block h1');
+          var subtitle = document.querySelector('.title-block p');
+          var nextTitle = 'n8n Workflow Command Center';
+          var nextSubtitle = 'Centro avanzado de nodos, snippets y workflows';
+          if (h1 && h1.textContent !== nextTitle) h1.textContent = nextTitle;
+          if (subtitle && subtitle.textContent !== nextSubtitle) subtitle.textContent = nextSubtitle;
+          if (document.title !== nextTitle) document.title = nextTitle;
+        }
+
+        function ensureGuideButton() {
+          var actions = document.querySelector('.header-actions');
+          if (!actions) return;
+          if (actions.querySelector('.site-guide-btn')) return;
+
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'site-guide-btn';
+          button.textContent = 'Guia completa';
+          button.setAttribute('aria-label', 'Abrir guia completa de la web');
+          button.addEventListener('click', openGuide);
+
+          actions.appendChild(button);
+        }
+
+        function syncUi() {
+          ensureAdvancedTitle();
+          ensureGuideButton();
+        }
+
+        function startSyncLoop() {
+          if (syncTimer !== null) return;
+          syncTimer = window.setInterval(function () {
+            syncUi();
+            syncRuns += 1;
+            if (syncRuns >= MAX_SYNC_RUNS) {
+              window.clearInterval(syncTimer);
+              syncTimer = null;
+            }
+          }, 250);
+        }
+
+        function initSiteGuide() {
+          syncUi();
+          startSyncLoop();
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initSiteGuide);
+        } else {
+          initSiteGuide();
+        }
+      })();
+    </script>
+    <script>
+      // Mueve el buscador al apartado de nodos (zona de resultados).
+      (function () {
+        var observer = null;
+        var syncTimer = null;
+
+        function getHeaderSearchBox() {
+          return document.querySelector('.app-header .search-box');
+        }
+
+        function getHeaderSearchInput() {
+          var box = getHeaderSearchBox();
+          return box ? box.querySelector('input[type="search"]') : null;
+        }
+
+        function getResultsGrid() {
+          return document.querySelector('.content-layout .results-grid');
+        }
+
+        function normalizeText(value) {
+          return (value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function clearSourceSearch() {
+          var sourceInput = getHeaderSearchInput();
+          if (!sourceInput) return;
+          if (!sourceInput.value) return;
+          sourceInput.value = '';
+          sourceInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function updateNodeHighlights(queryText) {
+          var query = normalizeText(queryText).trim();
+          var cards = document.querySelectorAll('.results-grid .resource-card');
+          var visibleCount = 0;
+
+          for (var i = 0; i < cards.length; i += 1) {
+            var card = cards[i];
+            if (!query) {
+              card.classList.remove('nodes-search-match');
+              card.style.removeProperty('display');
+              continue;
+            }
+            var titleNode = card.querySelector('h3');
+            var titleText = normalizeText(titleNode ? titleNode.textContent || '' : '');
+            var isNodeCard = !!card.querySelector('.type-pill--node');
+            var matches = isNodeCard && titleText.includes(query);
+
+            if (matches) {
+              card.classList.add('nodes-search-match');
+              card.style.removeProperty('display');
+              visibleCount += 1;
+            } else {
+              card.classList.remove('nodes-search-match');
+              card.style.display = 'none';
+            }
+          }
+
+          var moreButton = document.querySelector('.results-more');
+          if (moreButton) {
+            moreButton.style.display = query ? 'none' : '';
+          }
+
+          var emptyState = document.querySelector('.results-grid .empty-state');
+          if (emptyState && query) {
+            emptyState.style.display = visibleCount === 0 ? '' : 'none';
+          }
+        }
+
+        function ensureNodesSearchPanel() {
+          var resultsGrid = getResultsGrid();
+          if (!resultsGrid) return;
+
+          var panel = document.querySelector('.nodes-search-panel');
+          if (!panel) {
+            panel = document.createElement('section');
+            panel.className = 'nodes-search-panel';
+            panel.innerHTML =
+              '<label><span class="nodes-search-panel-title">Buscar en nodos</span><input type="search" /></label>';
+
+            var mirrorInput = panel.querySelector('input');
+            mirrorInput.addEventListener('input', function () {
+              clearSourceSearch();
+              updateNodeHighlights(mirrorInput.value);
+            });
+
+            resultsGrid.insertBefore(panel, resultsGrid.firstChild);
+          }
+
+          if (panel.parentNode !== resultsGrid) {
+            resultsGrid.insertBefore(panel, resultsGrid.firstChild);
+          }
+
+          var sourceBox = getHeaderSearchBox();
+          var sourceInput = getHeaderSearchInput();
+          var panelInput = panel.querySelector('input');
+          if (!panelInput) return;
+
+          if (sourceBox) sourceBox.classList.add('search-box--externalized');
+
+          if (sourceInput) {
+            if (!panelInput.placeholder) panelInput.placeholder = sourceInput.placeholder || 'Buscar nodos...';
+          }
+
+          clearSourceSearch();
+          updateNodeHighlights(panelInput.value);
+        }
+
+        function initNodesSearchRelocation() {
+          ensureNodesSearchPanel();
+
+          if (!observer) {
+            observer = new MutationObserver(ensureNodesSearchPanel);
+            observer.observe(document.body, { childList: true, subtree: true });
+          }
+
+          if (syncTimer === null) {
+            syncTimer = window.setInterval(ensureNodesSearchPanel, 450);
+          }
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initNodesSearchRelocation);
+        } else {
+          initNodesSearchRelocation();
+        }
+      })();
+    </script>
+    <script>
+      // Bloquea el scroll del fondo cuando se abre el panel lateral/modal.
+      (function () {
+        var locked = false;
+        var savedScrollY = 0;
+        var observer = null;
+
+        function shouldLockBackground() {
+          return !!document.querySelector('.detail-drawer, .modal-shell');
+        }
+
+        function lockBackgroundScroll() {
+          if (locked) return;
+          savedScrollY = window.scrollY || window.pageYOffset || 0;
+
+          document.documentElement.classList.add('body-scroll-lock');
+          document.body.classList.add('body-scroll-lock');
+          document.body.style.position = 'fixed';
+          document.body.style.top = '-' + String(savedScrollY) + 'px';
+          document.body.style.left = '0';
+          document.body.style.right = '0';
+          document.body.style.width = '100%';
+
+          locked = true;
+        }
+
+        function unlockBackgroundScroll() {
+          if (!locked) return;
+          var restoreY = savedScrollY;
+
+          document.documentElement.classList.remove('body-scroll-lock');
+          document.body.classList.remove('body-scroll-lock');
+          document.body.style.removeProperty('position');
+          document.body.style.removeProperty('top');
+          document.body.style.removeProperty('left');
+          document.body.style.removeProperty('right');
+          document.body.style.removeProperty('width');
+
+          locked = false;
+          window.scrollTo(0, restoreY);
+        }
+
+        function syncBackgroundScrollState() {
+          if (shouldLockBackground()) {
+            lockBackgroundScroll();
+            return;
+          }
+          unlockBackgroundScroll();
+        }
+
+        function initBackgroundScrollLock() {
+          syncBackgroundScrollState();
+          if (observer) return;
+
+          observer = new MutationObserver(function () {
+            syncBackgroundScrollState();
+          });
+          observer.observe(document.body, { childList: true, subtree: true });
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initBackgroundScrollLock);
+        } else {
+          initBackgroundScrollLock();
+        }
+
+        window.addEventListener('pagehide', function () {
+          unlockBackgroundScroll();
+        });
+      })();
+    </script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
