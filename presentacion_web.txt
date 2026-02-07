@@ -1,0 +1,52 @@
+N8N WORKFLOW COMMAND CENTER
+Presentacion de la web
+
+1. Que es esta web
+Esta web es una biblioteca interactiva para trabajar con n8n.
+Permite buscar nodos, snippets y workflows, y ademas generar propuestas de automatizacion con IA desde prompts.
+
+2. Objetivo principal
+Ayudar a usuarios tecnicos y no tecnicos a:
+- Diseñar workflows mas rapido.
+- Entender que nodo usar en cada caso.
+- Crear flujos mas ordenados, mantenibles y listos para implementar en n8n.
+
+3. Funcionalidades principales
+- Biblioteca de recursos (Nodes, Snippets, Workflows).
+- Busqueda enfocada en nodos dentro del apartado de resultados.
+- Filtros por tipo, nivel, categoria, integraciones y tags.
+- Panel de detalle lateral para revisar cada recurso.
+- Sistema de favoritos.
+- Importar y exportar JSON de biblioteca.
+- Restaurar datos seed iniciales.
+- Asistente IA para crear recomendaciones de workflow.
+- Selector de nivel de workflow: Basico, Intermedio y Avanzado.
+- Generacion de Workflow JSON importable en n8n.
+- Boton para ver prompt completo en ventana dedicada.
+- Guia completa de la web desde cabecera.
+- Botones de ayuda "?" para explicar campos clave.
+- Boton "Actualizar web" para forzar recarga de cambios.
+- Formulario de contacto que abre el correo del usuario con destino: contact.n8nworkflow@gmail.com
+
+4. Valor diferencial
+- Une documentacion, biblioteca y generacion asistida en un solo lugar.
+- Reduce tiempo de prueba/error al crear automatizaciones.
+- Estructura clara para pasar de idea a flujo implementable.
+
+5. Flujo de uso recomendado
+1) Buscar nodos y recursos relacionados.
+2) Definir el prompt del caso real.
+3) Elegir nivel de workflow.
+4) Generar recomendacion y revisar esquema.
+5) Copiar o descargar JSON.
+6) Importar en n8n y ajustar credenciales.
+
+6. Publico objetivo
+- Equipos de automatizacion.
+- Freelancers y consultores n8n.
+- Equipos de operaciones y producto.
+- Usuarios que estan empezando en n8n y quieren una guia practica.
+
+7. Estado del proyecto
+La web ya incluye funcionalidades clave de busqueda, asistencia con IA, exportacion/importacion y ayuda contextual.
+Esta lista para uso general y para seguir evolucionando con nuevas mejoras.
